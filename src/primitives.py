@@ -32,13 +32,8 @@ class Primitives(ScalingFamily):
         def compute_support(spec):
             supps = []
             for coeff, base, shift in spec:
-                print(shift)
                 a,b = self.supports[base]
-                print(a,b)
-                # scaling by factor 2, then shift
                 supps.append(((a+shift)/2, (b+shift)/2))
-                print((a+shift)/2, (b+shift)/2)
-            # union
             a = min(s[0] for s in supps)
             b = max(s[1] for s in supps)
             return (a,b)
