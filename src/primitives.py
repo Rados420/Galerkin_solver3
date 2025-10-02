@@ -32,9 +32,12 @@ class Primitives(ScalingFamily):
         def compute_support(spec):
             supps = []
             for coeff, base, shift in spec:
+                print(shift)
                 a,b = self.supports[base]
+                print(a,b)
                 # scaling by factor 2, then shift
                 supps.append(((a+shift)/2, (b+shift)/2))
+                print((a+shift)/2, (b+shift)/2)
             # union
             a = min(s[0] for s in supps)
             b = max(s[1] for s in supps)
@@ -46,14 +49,14 @@ class Primitives(ScalingFamily):
             self.supports["psib"] = compute_support(self.psib_spec)
 
     def psi(self,x):
-        return sum(c * getattr(self,base)(2*x + sh) for c,base,sh in self.psi_spec)
+        return sum(c * getattr(self,base)(2*x - sh) for c,base,sh in self.psi_spec)
     def psib(self,x):
-        return sum(c * getattr(self,base)(2*x + sh) for c,base,sh in self.psib_spec)
+        return sum(c * getattr(self,base)(2*x - sh) for c,base,sh in self.psib_spec)
 
     def dpsi(self,x):
-        return sum(c*2*getattr(self,"d"+base)(2*x + sh) for c,base,sh in self.psi_spec)
+        return sum(c*2*getattr(self,"d"+base)(2*x - sh) for c,base,sh in self.psi_spec)
     def dpsib(self,x):
-        return sum(c*2*getattr(self,"d"+base)(2*x + sh) for c,base,sh in self.psib_spec)
+        return sum(c*2*getattr(self,"d"+base)(2*x - sh) for c,base,sh in self.psib_spec)
 
 
     def as_dict(self):
@@ -95,7 +98,7 @@ class SF_MinimalSupport(ScalingFamily):
 class Primitives_MinimalSupport(SF_MinimalSupport, Primitives):
     def __init__(self):
         # define wavelet as -0.5 φ(2x-1) + 0.5 φ(2x-2)
-        psi_spec  = [( -0.5, "phi", -1), (0.5, "phi", -2)]
+        psi_spec  = [( -0.5, "phi", 1), (0.5, "phi", 2)]
         psib_spec = [( -0.5, "phib", 0), (0.5, "phi", 0)]
         super().__init__(psi_spec=psi_spec, psib_spec=psib_spec,
                          supports=self.supports.copy())
