@@ -11,10 +11,9 @@ class Element(TypedDict):
     shift: int
     support: tuple[float, float]
 
-base:list[list[Element]]
 
-def build_basis_1d(primitives, level: int) -> List[List[Element]]:
-    assert level >= 2
+def build_basis_1d(primitives,J_max:int,J_0: int=2) -> List[List[Element]]:
+    assert J_max >= J_0
     base: List[List[Element]] = []
 
     def mid_elem(f, j, k, supp) -> Element:
@@ -31,31 +30,31 @@ def build_basis_1d(primitives, level: int) -> List[List[Element]]:
     a_b, b_b = primitives.supports["phib"]
     # left boundary:  φ_{j,1}(x) = 2^{j/2} φ_b(2^j x)
     scals.append({
-        "function": (lambda x, j=level: (2**(j/2))*primitives.phib((2**j)*x)),
+        "function": (lambda x, j=J_0: (2 ** (j / 2)) * primitives.phib((2 ** j) * x)),
         "type": "left",
-        "scale": level,
+        "scale": J_0,
         "shift": 1,
-        "support": (a_b/(2**level), b_b/(2**level)),
+        "support": (a_b / (2 ** J_0), b_b / (2 ** J_0)),
     })
     # inner scalings:  φ_{j,k}(x) = 2^{j/2} φ(2^j x - k + 2), k=2..2^j-1
     a, b = primitives.supports["phi"]
-    for k in range(2, 2**level):
-        scals.append(mid_elem(primitives.phi, level, k,
-                              ((a + k - 2)/(2**level), (b + k - 2)/(2**level))))
+    for k in range(2, 2 ** J_0):
+        scals.append(mid_elem(primitives.phi, J_0, k,
+                              ((a + k - 2) / (2 ** J_0), (b + k - 2) / (2 ** J_0))))
     # right boundary (mirror):  φ_{j,2^j}(x) = 2^{j/2} φ_b(2^j (1 - x))
     scals.append({
-        "function": (lambda x, j=level: (2**(j/2))*primitives.phib((2**j)*(1 - x))),
+        "function": (lambda x, j=J_0: (2 ** (j / 2)) * primitives.phib((2 ** j) * (1 - x))),
         "type": "right",
-        "scale": level,
-        "shift": 2**level,
-        "support": (1 - b_b/(2**level), 1 - a_b/(2**level)),
+        "scale": J_0,
+        "shift": 2 ** J_0,
+        "support": (1 - b_b / (2 ** J_0), 1 - a_b / (2 ** J_0)),
     })
     base.append(scals)
 
     # --- wavelets for j = 2..level
     a_w, b_w = primitives.supports["psi"]
     a_wb, b_wb = primitives.supports["psib"]
-    for j in range(2, level + 1):
+    for j in range(J_0, J_max + 1):
         waves: List[Element] = []
         # left boundary:  ψ_{j,1}(x) = 2^{j/2} ψ_b(2^j x)
         waves.append({
@@ -85,8 +84,8 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from primitives import Primitives_MinimalSupport
     primitives = Primitives_MinimalSupport()
-    basis = build_basis_1d(primitives=primitives, level=6)
-    element=basis[3][-1]
+    basis = build_basis_1d(primitives=primitives, J_max=4)
+    element=basis[2][3]
     print(element)
     f=element["function"]
     xx=np.linspace(0, 1, 300)
