@@ -10,13 +10,13 @@ class ScalingFamily:
 
     def phi(self, x): raise NotImplementedError
     def phib(self, x): raise NotImplementedError
-    def dphi(self, x): raise NotImplementedError
-    def dphib(self, x): raise NotImplementedError
+    # def dphi(self, x): raise NotImplementedError
+    # def dphib(self, x): raise NotImplementedError
 
     def as_dict(self) -> Dict[str, Callable]:
         return {
             "phi": self.phi, "phib": self.phib,
-            "dphi": self.dphi, "dphib": self.dphib
+            # "dphi": self.dphi, "dphib": self.dphib
         }
 
 @dataclass
@@ -48,17 +48,17 @@ class Primitives(ScalingFamily):
     def psib(self,x):
         return sum(c * getattr(self,base)(2*x - sh) for c,base,sh in self.psib_spec)
 
-    def dpsi(self,x):
-        return sum(c*2*getattr(self,"d"+base)(2*x - sh) for c,base,sh in self.psi_spec)
-    def dpsib(self,x):
-        return sum(c*2*getattr(self,"d"+base)(2*x - sh) for c,base,sh in self.psib_spec)
+    # def dpsi(self,x):
+    #     return sum(c*2*getattr(self,"d"+base)(2*x - sh) for c,base,sh in self.psi_spec)
+    # def dpsib(self,x):
+    #     return sum(c*2*getattr(self,"d"+base)(2*x - sh) for c,base,sh in self.psib_spec)
 
 
     def as_dict(self):
         d = super().as_dict()
         d.update({
             "psi": self.psi, "psib": self.psib,
-            "dpsi": self.dpsi, "dpsib": self.dpsib
+            # "dpsi": self.dpsi, "dpsib": self.dpsib
         })
         return d
 
@@ -78,17 +78,17 @@ class SF_MinimalSupport(ScalingFamily):
         m=(0<=x)&(x<=1); y[m]=-9/4*x[m]**2+3*x[m]
         m=(1<x)&(x<=2); y[m]=3/4*x[m]**2-3*x[m]+3
         return y
-    def dphi(self,x):
-        x=np.asarray(x); y=np.zeros_like(x,float)
-        m=(0<=x)&(x<=1); y[m]=x[m]
-        m=(1<x)&(x<=2); y[m]=-2*x[m]+3
-        m=(2<x)&(x<=3); y[m]=x[m]-3
-        return y
-    def dphib(self,x):
-        x=np.asarray(x); y=np.zeros_like(x,float)
-        m=(0<=x)&(x<=1); y[m]=-9/2*x[m]+3
-        m=(1<x)&(x<=2); y[m]=1.5*x[m]-3
-        return y
+    # def dphi(self,x):
+    #     x=np.asarray(x); y=np.zeros_like(x,float)
+    #     m=(0<=x)&(x<=1); y[m]=x[m]
+    #     m=(1<x)&(x<=2); y[m]=-2*x[m]+3
+    #     m=(2<x)&(x<=3); y[m]=x[m]-3
+    #     return y
+    # def dphib(self,x):
+    #     x=np.asarray(x); y=np.zeros_like(x,float)
+    #     m=(0<=x)&(x<=1); y[m]=-9/2*x[m]+3
+    #     m=(1<x)&(x<=2); y[m]=1.5*x[m]-3
+    #     return y
 
 class Primitives_MinimalSupport(SF_MinimalSupport, Primitives):
     def __init__(self):
