@@ -11,8 +11,6 @@ def assemble_matrix(basis1, basis2):
     elems2 = [e for group in basis2 for e in group]
     assert len(elems1) == len(elems2), "Bases must have same structure"
 
-    xx = np.linspace(0, 1, 400)
-
     n = len(elems1)
     A = np.zeros((n, n))
 
@@ -30,16 +28,24 @@ def assemble_matrix(basis1, basis2):
 
 
 if __name__ == "__main__":
-    from src.basis import build_basis_1d
+    from src.basis import build_basis_1d, lambdas_to_callables, differentiate_basis
     from primitives import Primitives_MinimalSupport
     import matplotlib.pyplot as plt
     from time import time
 
     primitives = Primitives_MinimalSupport()
     basis = build_basis_1d(primitives=primitives, J_max=5)
+    dbasis = differentiate_basis(basis)
+    basis_num = lambdas_to_callables(basis)
+    dbasis_num = lambdas_to_callables(dbasis)
+
     start = time()
-    M = assemble_matrix(basis, basis)
+    M = assemble_matrix(basis_num, basis_num)
+    S = assemble_matrix(dbasis_num, dbasis_num)
     end = time()
     print(f"Matrix assembled in {end-start} seconds")
+    print(f"conditional number M :  {np.linalg.cond(M)}")
+    print(f"conditional number S :  {np.linalg.cond(S)}")
     plt.imshow(M)
+    plt.imshow(S)
     plt.show()
