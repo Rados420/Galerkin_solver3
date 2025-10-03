@@ -1,93 +1,126 @@
+from typing import Literal, TypedDict, List
+import sympy as sp
 
-from typing import Callable, Literal, TypedDict, List
-import numpy as np
-
+x = sp.Symbol("x")
 btype = Literal["left", "middle", "right"]
 
+
 class Element(TypedDict):
-    function: Callable[[np.ndarray], np.ndarray]
+    function: sp.Lambda
     type: btype
     scale: int
     shift: int
     support: tuple[float, float]
 
 
-def build_basis_1d(primitives,J_max:int,J_0: int=2) -> List[List[Element]]:
+def build_basis_1d(primitives, J_max: int, J_0: int = 2) -> List[List[Element]]:
+    """
+    Build symbolic basis elements (Scaling + Wavelets) using sympy.Lambda.
+    """
     assert J_max >= J_0
     base: List[List[Element]] = []
 
-    def mid_elem(f, j, k, supp) -> Element:
+    def mid_elem(f_method, j, k, supp) -> Element:
+        f_lambda = f_method()  # get the Lambda from primitives
+        expr = (2 ** (j / 2)) * f_lambda(2**j * x - (k - 2))
         return {
-            "function": (lambda x, f=f, j=j, k=k: (2**(j/2))*f((2**j)*x - (k - 2))),
+            "function": sp.Lambda(x, expr),
             "type": "middle",
             "scale": j,
             "shift": k,
             "support": supp,
         }
 
-    # --- scaling at level 'level'
+    # --- scaling at level J0
     scals: List[Element] = []
     a_b, b_b = primitives.supports["phib"]
-    # left boundary:  φ_{j,1}(x) = 2^{j/2} φ_b(2^j x)
-    scals.append({
-        "function": (lambda x, j=J_0: (2 ** (j / 2)) * primitives.phib((2 ** j) * x)),
-        "type": "left",
-        "scale": J_0,
-        "shift": 1,
-        "support": (a_b / (2 ** J_0), b_b / (2 ** J_0)),
-    })
-    # inner scalings:  φ_{j,k}(x) = 2^{j/2} φ(2^j x - k + 2), k=2..2^j-1
+
+    # left boundary φ_b
+    scals.append(
+        {
+            "function": sp.Lambda(x, (2 ** (J_0 / 2)) * primitives.phib()(2**J_0 * x)),
+            "type": "left",
+            "scale": J_0,
+            "shift": 1,
+            "support": (a_b / (2**J_0), b_b / (2**J_0)),
+        }
+    )
+
+    # inner scalings
     a, b = primitives.supports["phi"]
-    for k in range(2, 2 ** J_0):
-        scals.append(mid_elem(primitives.phi, J_0, k,
-                              ((a + k - 2) / (2 ** J_0), (b + k - 2) / (2 ** J_0))))
-    # right boundary (mirror):  φ_{j,2^j}(x) = 2^{j/2} φ_b(2^j (1 - x))
-    scals.append({
-        "function": (lambda x, j=J_0: (2 ** (j / 2)) * primitives.phib((2 ** j) * (1 - x))),
-        "type": "right",
-        "scale": J_0,
-        "shift": 2 ** J_0,
-        "support": (1 - b_b / (2 ** J_0), 1 - a_b / (2 ** J_0)),
-    })
+    for k in range(2, 2**J_0):
+        supp = ((a + k - 2) / (2**J_0), (b + k - 2) / (2**J_0))
+        scals.append(mid_elem(primitives.phi, J_0, k, supp))
+
+    # right boundary φ_b mirrored
+    scals.append(
+        {
+            "function": sp.Lambda(
+                x, (2 ** (J_0 / 2)) * primitives.phib()(2**J_0 * (1 - x))
+            ),
+            "type": "right",
+            "scale": J_0,
+            "shift": 2**J_0,
+            "support": (1 - b_b / (2**J_0), 1 - a_b / (2**J_0)),
+        }
+    )
     base.append(scals)
 
-    # --- wavelets for j = 2..level
+    # --- wavelets for j = J0..J_max
     a_w, b_w = primitives.supports["psi"]
     a_wb, b_wb = primitives.supports["psib"]
+
     for j in range(J_0, J_max + 1):
         waves: List[Element] = []
-        # left boundary:  ψ_{j,1}(x) = 2^{j/2} ψ_b(2^j x)
-        waves.append({
-            "function": (lambda x, j=j: (2**(j/2))*primitives.psib((2**j)*x)),
-            "type": "left",
-            "scale": j,
-            "shift": 1,
-            "support": (a_wb/(2**j), b_wb/(2**j)),
-        })
-        # inner wavelets:  ψ_{j,k}(x) = 2^{j/2} ψ(2^j x - k + 2), k=2..2^j-1
+
+        # left boundary ψ_b
+        waves.append(
+            {
+                "function": sp.Lambda(x, (2 ** (j / 2)) * primitives.psib()(2**j * x)),
+                "type": "left",
+                "scale": j,
+                "shift": 1,
+                "support": (a_wb / (2**j), b_wb / (2**j)),
+            }
+        )
+
+        # inner wavelets
         for k in range(2, 2**j):
-            waves.append(mid_elem(primitives.psi, j, k,
-                                  ((a_w + k - 2)/(2**j), (b_w + k - 2)/(2**j))))
-        # right boundary (mirror with minus):  ψ_{j,2^j}(x) = -2^{j/2} ψ_b(2^j (1 - x))
-        waves.append({
-            "function": (lambda x, j=j: -(2**(j/2))*primitives.psib((2**j)*(1 - x))),
-            "type": "right",
-            "scale": j,
-            "shift": 2**j,
-            "support": (1 - b_wb/(2**j), 1 - a_wb/(2**j)),
-        })
+            supp = ((a_w + k - 2) / (2**j), (b_w + k - 2) / (2**j))
+            waves.append(mid_elem(primitives.psi, j, k, supp))
+
+        # right boundary ψ_b mirrored (with minus)
+        waves.append(
+            {
+                "function": sp.Lambda(
+                    x, -(2 ** (j / 2)) * primitives.psib()(2**j * (1 - x))
+                ),
+                "type": "right",
+                "scale": j,
+                "shift": 2**j,
+                "support": (1 - b_wb / (2**j), 1 - a_wb / (2**j)),
+            }
+        )
+
         base.append(waves)
 
     return base
 
+
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    from primitives import Primitives_MinimalSupport
+    import numpy as np, matplotlib.pyplot as plt
+    from primitives import Primitives_MinimalSupport  # from your previous script
+
     primitives = Primitives_MinimalSupport()
     basis = build_basis_1d(primitives=primitives, J_max=4)
-    element=basis[2][3]
+
+    # pick one element and plot it
+    element = basis[0][1]
     print(element)
-    f=element["function"]
-    xx=np.linspace(0, 1, 300)
-    plt.plot(xx,f(xx))
+
+    f_sym = element["function"]
+    f_num = sp.lambdify(x, f_sym(x), "numpy")  # numeric version
+
+    xx = np.linspace(0, 1, 300)
+    plt.plot(xx, f_num(xx))
     plt.show()
