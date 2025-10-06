@@ -1,17 +1,18 @@
 from typing import Literal, TypedDict, List
 import sympy as sp
+from typing import Callable, Optional
 
 x = sp.Symbol("x")
 btype = Literal["left", "middle", "right"]
 
 
 class Element(TypedDict):
-    function: sp.Lambda
+    function_sym: sp.Lambda
+    function_num: Optional[Callable]
     type: btype
     scale: int
     shift: int
     support: tuple[float, float]
-
 
 def build_basis_1d(primitives, J_max: int, J_0: int = 2) -> List[List[Element]]:
     """
@@ -105,63 +106,3 @@ def build_basis_1d(primitives, J_max: int, J_0: int = 2) -> List[List[Element]]:
         base.append(waves)
 
     return base
-
-
-def lambdas_to_callables(basis: List[List[Element]]) -> List[List[Element]]:
-    """
-    Convert a basis with sympy.Lambda functions into numpy-callable versions.
-    Adds a key 'function_sym' storing the original Lambda.
-    """
-    x = sp.Symbol("x")
-    new_basis: List[List[Element]] = []
-
-    for group in basis:
-        new_group: List[Element] = []
-        for elem in group:
-            f_lambda = elem["function"]  # sympy.Lambda
-            f_num = sp.lambdify(x, f_lambda(x), "numpy")
-            new_elem = elem.copy()  # shallow copy of Element
-            new_elem["function_sym"] = f_lambda
-            new_elem["function"] = f_num  # numeric callable for fast use
-            new_group.append(new_elem)
-        new_basis.append(new_group)
-
-    return new_basis
-
-
-def differentiate_basis(basis: List[List[Element]]) -> List[List[Element]]:
-    """
-    Differentiate the symbolic part ('function_sym') of each Element in the basis.
-    Returns a new basis with updated symbolic functions.
-    """
-    new_basis: List[List[Element]] = []
-    for group in basis:
-        new_group = []
-        for elem in group:
-            f_sym = elem.get("function_sym", elem["function"])  # fall back if not set
-            f_diff = sp.Lambda(x, sp.diff(f_sym(x), x))
-            new_elem = elem.copy()
-            new_elem["function_sym"] = f_diff
-            new_elem["function"] = f_diff  # keep symbolic until lambdas_to_callables
-            new_group.append(new_elem)
-        new_basis.append(new_group)
-    return new_basis
-
-
-if __name__ == "__main__":
-    import numpy as np, matplotlib.pyplot as plt
-    from primitives import Primitives_MinimalSupport  # from your previous script
-
-    primitives = Primitives_MinimalSupport()
-    basis = build_basis_1d(primitives=primitives, J_max=4)
-
-    # pick one element and plot it
-    element = basis[0][1]
-    print(element)
-
-    f_sym = element["function"]
-    f_num = sp.lambdify(x, f_sym(x), "numpy")  # numeric version
-
-    xx = np.linspace(0, 1, 300)
-    plt.plot(xx, f_num(xx))
-    plt.show()

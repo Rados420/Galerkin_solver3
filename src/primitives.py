@@ -17,7 +17,7 @@ class ScalingFamily:
     def phib(self):
         raise NotImplementedError
 
-    def as_dict(self) -> Dict[str, sp.Lambda]:
+    def get_primitives(self) -> Dict[str, sp.Lambda]:
         return {"phi": self.phi(), "phib": self.phib()}
 
 
@@ -25,7 +25,7 @@ class ScalingFamily:
 class Primitives(ScalingFamily):
     psi_spec: List[Tuple[float, str, float]] = field(default_factory=list)
     psib_spec: List[Tuple[float, str, float]] = field(default_factory=list)
-    supports: Dict[str, Tuple[float, float]] = field(default_factory=dict)
+    # supports: Dict[str, Tuple[float, float]] = field(default_factory=dict)
 
     def __post_init__(self):
         def compute_support(spec):
@@ -54,10 +54,13 @@ class Primitives(ScalingFamily):
             ),
         )
 
-    def as_dict(self):
-        d = super().as_dict()
+    def get_primitives(self):
+        d = super().get_primitives()
         d.update({"psi": self.psi(), "psib": self.psib()})
         return d
+
+    def get_supports(self):
+        return self.supports
 
 
 class SF_MinimalSupport(ScalingFamily):
@@ -96,7 +99,7 @@ class Primitives_MinimalSupport(SF_MinimalSupport, Primitives):
 
 if __name__ == "__main__":
     P = Primitives_MinimalSupport()
-    funcs = P.as_dict()
+    funcs = P.get_primitives()
 
     print("Supports:", P.supports)
     print("ψ symbolic:", funcs["psi"].expr)

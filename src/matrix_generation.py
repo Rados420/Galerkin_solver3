@@ -28,7 +28,7 @@ def assemble_matrix(basis1, basis2):
 
 
 if __name__ == "__main__":
-    from src.basis import build_basis_1d, lambdas_to_callables, differentiate_basis
+    from src.basis.basis import build_basis_1d, lambdas_to_callables, differentiate_basis
     from primitives import Primitives_MinimalSupport
     import matplotlib.pyplot as plt
     from time import time
