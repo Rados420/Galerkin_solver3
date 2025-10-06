@@ -14,6 +14,7 @@ class Element(TypedDict):
     shift: int
     support: tuple[float, float]
 
+
 def build_basis_1d(primitives, J_max: int, J_0: int = 2) -> List[List[Element]]:
     """
     Build symbolic basis elements (Scaling + Wavelets) using sympy.Lambda.
@@ -25,7 +26,7 @@ def build_basis_1d(primitives, J_max: int, J_0: int = 2) -> List[List[Element]]:
         f_lambda = f_method()  # get the Lambda from primitives
         expr = (2 ** (j / 2)) * f_lambda(2**j * x - (k - 2))
         return {
-            "function": sp.Lambda(x, expr),
+            "function_sym": sp.Lambda(x, expr),
             "type": "middle",
             "scale": j,
             "shift": k,
@@ -39,7 +40,9 @@ def build_basis_1d(primitives, J_max: int, J_0: int = 2) -> List[List[Element]]:
     # left boundary φ_b
     scals.append(
         {
-            "function": sp.Lambda(x, (2 ** (J_0 / 2)) * primitives.phib()(2**J_0 * x)),
+            "function_sym": sp.Lambda(
+                x, (2 ** (J_0 / 2)) * primitives.phib()(2**J_0 * x)
+            ),
             "type": "left",
             "scale": J_0,
             "shift": 1,
@@ -56,7 +59,7 @@ def build_basis_1d(primitives, J_max: int, J_0: int = 2) -> List[List[Element]]:
     # right boundary φ_b mirrored
     scals.append(
         {
-            "function": sp.Lambda(
+            "function_sym": sp.Lambda(
                 x, (2 ** (J_0 / 2)) * primitives.phib()(2**J_0 * (1 - x))
             ),
             "type": "right",
@@ -77,7 +80,9 @@ def build_basis_1d(primitives, J_max: int, J_0: int = 2) -> List[List[Element]]:
         # left boundary ψ_b
         waves.append(
             {
-                "function": sp.Lambda(x, (2 ** (j / 2)) * primitives.psib()(2**j * x)),
+                "function_sym": sp.Lambda(
+                    x, (2 ** (j / 2)) * primitives.psib()(2**j * x)
+                ),
                 "type": "left",
                 "scale": j,
                 "shift": 1,
@@ -93,7 +98,7 @@ def build_basis_1d(primitives, J_max: int, J_0: int = 2) -> List[List[Element]]:
         # right boundary ψ_b mirrored (with minus)
         waves.append(
             {
-                "function": sp.Lambda(
+                "function_sym": sp.Lambda(
                     x, -(2 ** (j / 2)) * primitives.psib()(2**j * (1 - x))
                 ),
                 "type": "right",
