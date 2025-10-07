@@ -2,7 +2,8 @@ import numpy as np
 from scipy.integrate import quad
 
 
-def assemble_matrix(basis1, basis2):
+# noinspection PyTupleAssignmentBalance
+def assemble_matrix_intgral(basis1, basis2):
     """
     Assemble matrix A_ij = ∫ f_i(x) g_j(x) dx
     basis1, basis2: List[List[Element]] with same structure (supports etc.)
@@ -45,8 +46,8 @@ if __name__ == "__main__":
     dbasis.compute_callables()
 
     start = time()
-    M = assemble_matrix(basis.basis, basis.basis)
-    S = assemble_matrix(dbasis.basis, dbasis.basis)
+    M = assemble_matrix_intgral(basis.basis, basis.basis)
+    S = assemble_matrix_intgral(dbasis.basis, dbasis.basis)
     end = time()
     print(f"Matrix assembled in {end-start} seconds")
     print(f"conditional number M :  {np.linalg.cond(M)}")

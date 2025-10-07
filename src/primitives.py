@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Callable, Dict, Tuple, List
+from typing import Dict, Tuple, List
 import sympy as sp
 
 x = sp.Symbol("x")
@@ -25,7 +25,6 @@ class ScalingFamily:
 class Primitives(ScalingFamily):
     psi_spec: List[Tuple[float, str, float]] = field(default_factory=list)
     psib_spec: List[Tuple[float, str, float]] = field(default_factory=list)
-    # supports: Dict[str, Tuple[float, float]] = field(default_factory=dict)
 
     def __post_init__(self):
         def compute_support(spec):

@@ -16,96 +16,88 @@ class Element(TypedDict):
 
 
 def build_basis_1d(primitives, J_max: int, J_0: int = 2) -> List[List[Element]]:
-    """
-    Build symbolic basis elements (Scaling + Wavelets) using sympy.Lambda.
-    """
     assert J_max >= J_0
     base: List[List[Element]] = []
 
     def mid_elem(f_method, j, k, supp) -> Element:
-        f_lambda = f_method()  # get the Lambda from primitives
+        f_lambda = f_method()
         expr = (2 ** (j / 2)) * f_lambda(2**j * x - (k - 2))
-        return {
-            "function_sym": sp.Lambda(x, expr),
-            "type": "middle",
-            "scale": j,
-            "shift": k,
-            "support": supp,
-        }
+        return Element(
+            function_sym=sp.Lambda(x, expr),
+            function_num=None,
+            type="middle",
+            scale=j,
+            shift=k,
+            support=supp,
+        )
 
-    # --- scaling at level J0
+    # scaling at level J0
     scals: List[Element] = []
     a_b, b_b = primitives.supports["phib"]
 
-    # left boundary φ_b
     scals.append(
-        {
-            "function_sym": sp.Lambda(
-                x, (2 ** (J_0 / 2)) * primitives.phib()(2**J_0 * x)
-            ),
-            "type": "left",
-            "scale": J_0,
-            "shift": 1,
-            "support": (a_b / (2**J_0), b_b / (2**J_0)),
-        }
+        Element(
+            function_sym=sp.Lambda(x, (2 ** (J_0 / 2)) * primitives.phib()(2**J_0 * x)),
+            function_num=None,
+            type="left",
+            scale=J_0,
+            shift=1,
+            support=(a_b / (2**J_0), b_b / (2**J_0)),
+        )
     )
 
-    # inner scalings
     a, b = primitives.supports["phi"]
     for k in range(2, 2**J_0):
         supp = ((a + k - 2) / (2**J_0), (b + k - 2) / (2**J_0))
         scals.append(mid_elem(primitives.phi, J_0, k, supp))
 
-    # right boundary φ_b mirrored
     scals.append(
-        {
-            "function_sym": sp.Lambda(
+        Element(
+            function_sym=sp.Lambda(
                 x, (2 ** (J_0 / 2)) * primitives.phib()(2**J_0 * (1 - x))
             ),
-            "type": "right",
-            "scale": J_0,
-            "shift": 2**J_0,
-            "support": (1 - b_b / (2**J_0), 1 - a_b / (2**J_0)),
-        }
+            function_num=None,
+            type="right",
+            scale=J_0,
+            shift=2**J_0,
+            support=(1 - b_b / (2**J_0), 1 - a_b / (2**J_0)),
+        )
     )
     base.append(scals)
 
-    # --- wavelets for j = J0..J_max
+    # wavelets for j = J0..J_max
     a_w, b_w = primitives.supports["psi"]
     a_wb, b_wb = primitives.supports["psib"]
 
     for j in range(J_0, J_max + 1):
         waves: List[Element] = []
 
-        # left boundary ψ_b
         waves.append(
-            {
-                "function_sym": sp.Lambda(
-                    x, (2 ** (j / 2)) * primitives.psib()(2**j * x)
-                ),
-                "type": "left",
-                "scale": j,
-                "shift": 1,
-                "support": (a_wb / (2**j), b_wb / (2**j)),
-            }
+            Element(
+                function_sym=sp.Lambda(x, (2 ** (j / 2)) * primitives.psib()(2**j * x)),
+                function_num=None,
+                type="left",
+                scale=j,
+                shift=1,
+                support=(a_wb / (2**j), b_wb / (2**j)),
+            )
         )
 
-        # inner wavelets
         for k in range(2, 2**j):
             supp = ((a_w + k - 2) / (2**j), (b_w + k - 2) / (2**j))
             waves.append(mid_elem(primitives.psi, j, k, supp))
 
-        # right boundary ψ_b mirrored (with minus)
         waves.append(
-            {
-                "function_sym": sp.Lambda(
+            Element(
+                function_sym=sp.Lambda(
                     x, -(2 ** (j / 2)) * primitives.psib()(2**j * (1 - x))
                 ),
-                "type": "right",
-                "scale": j,
-                "shift": 2**j,
-                "support": (1 - b_wb / (2**j), 1 - a_wb / (2**j)),
-            }
+                function_num=None,
+                type="right",
+                scale=j,
+                shift=2**j,
+                support=(1 - b_wb / (2**j), 1 - a_wb / (2**j)),
+            )
         )
 
         base.append(waves)
