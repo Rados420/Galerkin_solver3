@@ -80,13 +80,13 @@ def build_basis_1d(primitives, j_max: int, j_0: int = 2) -> List[Dict[str, Eleme
         primitives.phib, j_0, 1, (a_b, b_b), ((0, -1),)
     )
 
-    for k in range(2, 2 ** j_0):
+    for k in range(2, 2**j_0):
         scals[_make_id("S", j_0, k)] = _create_element_1d(
             primitives.phi, j_0, k, (a, b), ((0, 0),)
         )
 
-    scals[_make_id("S", j_0, 2 ** j_0)] = _create_element_1d(
-        primitives.phib, j_0, 2 ** j_0, (a_b, b_b), ((0, 1),)
+    scals[_make_id("S", j_0, 2**j_0)] = _create_element_1d(
+        primitives.phib, j_0, 2**j_0, (a_b, b_b), ((0, 1),)
     )
     base.append(scals)
 
@@ -113,9 +113,9 @@ def build_basis_1d(primitives, j_max: int, j_0: int = 2) -> List[Dict[str, Eleme
     return base
 
 
-
-
-def extend_isotropic_tensor(base_1d: List[Dict[str, Element]], d: int) -> List[Dict[str, Element]]:
+def extend_isotropic_tensor(
+    base_1d: List[Dict[str, Element]], d: int
+) -> List[Dict[str, Element]]:
     """Construct an isotropic tensor-product basis from 1D wavelet basis (supports up to d=3)."""
 
     if d == 1:
@@ -150,12 +150,12 @@ def extend_isotropic_tensor(base_1d: List[Dict[str, Element]], d: int) -> List[D
             tag = "T" + "_".join(keys[i] for i in combo)
 
             level_nd[tag] = Element(
-                function_sym= func_sym,
-                function_num= None,
-                scale= scale,
-                shift= shifts,
-                type= types,
-                support= support,
+                function_sym=func_sym,
+                function_num=None,
+                scale=scale,
+                shift=shifts,
+                type=types,
+                support=support,
             )
 
         nd_basis.append(level_nd)

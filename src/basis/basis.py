@@ -2,31 +2,43 @@ import sympy as sp
 
 from typing import List, Dict
 from src.primitives import Primitives, Primitives_MinimalSupport
-from src.basis.basis_generation import Element, build_basis_1d
+from src.basis.basis_generation import Element, build_basis_1d, extend_isotropic_tensor
 
 
-class BaseBasis(Primitives):
-    def __init__(self, primitives: Primitives):
+class BasisHandler:
+    def __init__(self, primitives: Primitives, dimension: int):
         self.primitives = primitives
-        self.basis: List[Dict[Element]] = [{}]
+        self.basis: List[Dict[str, Element]] = [{}]
+        self.dimension = dimension
 
-    def build_basis(self, J_Max, J_0, dimension: int):
-        if dimension == 1:
-            self.basis = build_basis_1d(self.primitives, J_Max, J_0)
+    def build_basis(
+        self,
+        J_Max,
+        J_0,
+    ):
+        basis_1d = build_basis_1d(self.primitives, J_Max, J_0)
+        if self.dimension == 1:
+            self.basis = basis_1d
         else:
-            raise NotImplementedError
+            self.basis = extend_isotropic_tensor(basis_1d, self.dimension)
 
     def compute_callables(self) -> None:
         """
-        Convert a basis with sympy.Lambda functions into numpy-callable versions.
+        Convert symbolic basis functions (sympy.Lambda) into NumPy-callable versions
+        for the current dimension.
         """
-        x = sp.Symbol("x")
+        # Create the correct number of sympy symbols for dimension d
+        x_syms = sp.symbols(f"x0:{self.dimension}")
+
         for group in self.basis:
             for elem in group.values():
                 f = elem["function_sym"]
-                # --- minimal fix: pass a plain Expr to lambdify
-                expr = f(x) if isinstance(f, sp.Lambda) else f
-                elem["function_num"] = sp.lambdify(x, expr, "numpy")
+                if isinstance(f, sp.Lambda):
+                    # Ensure correct arity: 1D, 2D, or 3D callable
+                    expr = f(*x_syms)
+                else:
+                    expr = f
+                elem["function_num"] = sp.lambdify(x_syms, expr, "numpy")
 
     def differentiate_basis(self) -> None:
         """
@@ -47,16 +59,35 @@ class BaseBasis(Primitives):
 
 
 if __name__ == "__main__":
-    import numpy as np, matplotlib.pyplot as plt
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
     primitives = Primitives_MinimalSupport()
-    mintest_basis = BaseBasis(primitives=primitives)
-    mintest_basis.build_basis(J_Max=4, J_0=2, dimension=1)
+    mintest_basis = BasisHandler(primitives=primitives, dimension=2)
+    mintest_basis.build_basis(J_Max=4, J_0=2)
     mintest_basis.compute_callables()
-    element = list(mintest_basis.basis[1].values())[3]
+
+    # pick one element
+    element = list(mintest_basis.basis[1].values())[15]
     print(element)
+
     f_num = element["function_num"]
 
-    xx = np.linspace(0, 1, 300)
-    plt.plot(xx, f_num(xx))
+    # mesh grid for plotting
+    xx = np.linspace(0, 1, 200)
+    yy = np.linspace(0, 1, 200)
+    X, Y = np.meshgrid(xx, yy)
+
+    # evaluate function on the grid
+    Z = f_num(X, Y)
+
+    # surface plot
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    ax.plot_surface(X, Y, Z, cmap="viridis", rstride=2, cstride=2, linewidth=0)
+    ax.set_xlabel("x0")
+    ax.set_ylabel("x1")
+    ax.set_zlabel("f(x0, x1)")
+    ax.set_title(f"2D Basis Element, scale={element['scale']}")
     plt.show()

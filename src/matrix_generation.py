@@ -29,15 +29,15 @@ def assemble_matrix_intgral(basis1, basis2):
 
 
 if __name__ == "__main__":
-    from src.basis.basis import BaseBasis
+    from src.basis.basis import BasisHandler
     from primitives import Primitives_MinimalSupport
     import matplotlib.pyplot as plt
     from time import time
 
     primitives = Primitives_MinimalSupport()
 
-    basis = BaseBasis(primitives=primitives)
-    dbasis = BaseBasis(primitives=primitives)
+    basis = BasisHandler(primitives=primitives)
+    dbasis = BasisHandler(primitives=primitives)
     basis.build_basis(J_Max=5, J_0=2, dimension=1)
     dbasis.build_basis(J_Max=5, J_0=2, dimension=1)
     basis.compute_callables()

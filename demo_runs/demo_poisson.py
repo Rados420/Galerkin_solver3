@@ -44,7 +44,7 @@ def evaluate_solution(basis_num, coeffs, xs):
 
 # --- Example usage ---
 if __name__ == "__main__":
-    from src.basis.basis import BaseBasis
+    from src.basis.basis import BasisHandler
     from src.matrix_generation import assemble_matrix_intgral
     from src.primitives import Primitives_MinimalSupport
     import matplotlib.pyplot as plt
@@ -52,8 +52,8 @@ if __name__ == "__main__":
 
     primitives = Primitives_MinimalSupport()
 
-    basis = BaseBasis(primitives=primitives)
-    dbasis = BaseBasis(primitives=primitives)
+    basis = BasisHandler(primitives=primitives)
+    dbasis = BasisHandler(primitives=primitives)
     basis.build_basis(J_Max=4, J_0=2, dimension=1)
     dbasis.build_basis(J_Max=4, J_0=2, dimension=1)
     basis.compute_callables()
