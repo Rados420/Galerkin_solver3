@@ -79,10 +79,10 @@ if __name__ == "__main__":
     dbasis = BasisHandler(primitives=primitives)
     basis.build_basis(J_Max=4, J_0=2, dimension=1)
     dbasis.build_basis(J_Max=4, J_0=2, dimension=1)
-    basis.compute_callables()
+    basis._compute_callables()
 
     dbasis.differentiate_basis()
-    dbasis.compute_callables()
+    dbasis._compute_callables()
 
     start = time()
     M = assemble_matrix_intgral(basis.basis, basis.basis)
