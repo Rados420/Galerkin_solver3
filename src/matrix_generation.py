@@ -35,7 +35,8 @@ def assemble_matrix_integral_1d(basis1, basis2):
 
 
 if __name__ == "__main__":
-    from src.basis.basis import BasisHandler,differentiate
+    from src.basis.basis import BasisHandler
+    from src.operators import differentiate
     from primitives import Primitives_MinimalSupport
     import matplotlib.pyplot as plt
     from time import time
@@ -43,17 +44,17 @@ if __name__ == "__main__":
     primitives = Primitives_MinimalSupport()
 
     basis_handler = BasisHandler(primitives=primitives, dimension=1)
-    basis_handler.build_basis(J_0=2,J_Max=5,comp_call=True)
-
+    basis_handler.build_basis(J_0=2, J_Max=4, comp_call=True)
 
     start = time()
     M = assemble_matrix_integral_1d(basis_handler.basis, basis_handler.basis)
-    basis_handler.apply(differentiate,axis=0)
+    basis_handler.apply(differentiate, axis=0)
     S = assemble_matrix_integral_1d(basis_handler.basis, basis_handler.basis)
     end = time()
     print(f"Matrix assembled in {end-start} seconds")
     print(f"conditional number M :  {np.linalg.cond(M)}")
     print(f"conditional number S :  {np.linalg.cond(S)}")
     plt.imshow(M)
+    plt.show()
     plt.imshow(S)
     plt.show()
