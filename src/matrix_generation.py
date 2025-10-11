@@ -1,27 +1,25 @@
 import numpy as np
+from typing import List
+from src.basis.basis_generation import Element
 from scipy.integrate import quad
 
 
-def assemble_matrix_integral_1d(basis1, basis2):
+def assemble_matrix_integral_1d(basis1:List[Element], basis2:List[Element]):
     """
     Assemble matrix A_ij = ∫ f_i(x) g_j(x) dx
-    Works with basis in format List[Dict[str, Element]].
-    Each Element must contain 'function_num' and 'support'.
+    Works with basis in format List[[Element]].
+   'function_num' must be precomputed.
     """
 
-    # flatten basis dicts into lists of Elements
-    elems1 = [elem for group in basis1 for elem in group.values()]
-    elems2 = [elem for group in basis2 for elem in group.values()]
+    assert len(basis1) == len(basis2), "Bases must have same structure"
 
-    assert len(elems1) == len(elems2), "Bases must have same structure"
-
-    n = len(elems1)
+    n = len(basis1)
     A = np.zeros((n, n))
 
-    for i, ei in enumerate(elems1):
+    for i, ei in enumerate(basis1):
         fi = ei["function_num"]
         (ai, bi) = ei["support"][0]
-        for j, ej in enumerate(elems2):
+        for j, ej in enumerate(basis2):
             fj = ej["function_num"]
             (aj, bj) = ej["support"][0]
 
@@ -47,9 +45,9 @@ if __name__ == "__main__":
     basis_handler.build_basis(J_0=2, J_Max=4, comp_call=True)
 
     start = time()
-    M = assemble_matrix_integral_1d(basis_handler.basis, basis_handler.basis)
+    M = assemble_matrix_integral_1d(basis_handler.flatten(), basis_handler.flatten())
     basis_handler.apply(differentiate, axis=0)
-    S = assemble_matrix_integral_1d(basis_handler.basis, basis_handler.basis)
+    S = assemble_matrix_integral_1d(basis_handler.flatten(), basis_handler.flatten())
     end = time()
     print(f"Matrix assembled in {end-start} seconds")
     print(f"conditional number M :  {np.linalg.cond(M)}")

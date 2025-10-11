@@ -10,8 +10,8 @@ class BasisHandler:
         self.basis: List[Dict[str, Element]] = [{}]
         self.dimension = dimension
         self.variable_symbols = sp.symbols(f"x0:{self.dimension}")
-
     def build_basis(self, J_Max, J_0, comp_call=True):
+
         basis_1d = build_basis_1d(self.primitives, J_Max, J_0)
         self.basis = (
             basis_1d
@@ -37,6 +37,11 @@ class BasisHandler:
                 group[key] = func(elem, **kwargs)
         if comp_call:
             self._compute_callables()
+
+    def flatten(self)->List[Element]:
+        """Flatten basis element into a single list."""
+        flattened = [el for group in self.basis for el in group.values()]
+        return flattened
 
 
 if __name__ == "__main__":
