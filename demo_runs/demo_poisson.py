@@ -3,14 +3,16 @@ import copy
 from scipy.integrate import quad
 import matplotlib.pyplot as plt
 
+
 def project_rhs(basis_num, f):
     """Compute b_i = ∫ f(x) * φ_i(x) dx"""
     b = np.zeros(len(basis_num))
     for i, ei in enumerate(basis_num):
         fi, (a, b_supp) = ei["function_num"], ei["support"][0]
         if a < b_supp:
-            val, _ = quad(lambda xx: f(xx) * fi(xx), a, b_supp,
-                          epsabs=1e-12, epsrel=1e-12)
+            val, _ = quad(
+                lambda xx: f(xx) * fi(xx), a, b_supp, epsabs=1e-12, epsrel=1e-12
+            )
             b[i] = val
     return b
 
@@ -30,10 +32,9 @@ def poisson_solver_1d(S, b):
 
 def evaluate_solution(basis_num, coeffs, xs):
     """Evaluate linear combination of basis functions at points xs."""
-    return np.array([
-        sum(c * e["function_num"](xx) for c, e in zip(coeffs, basis_num))
-        for xx in xs
-    ])
+    return np.array(
+        [sum(c * e["function_num"](xx) for c, e in zip(coeffs, basis_num)) for xx in xs]
+    )
 
 
 # ---------------- Example usage ----------------
@@ -54,8 +55,9 @@ if __name__ == "__main__":
     basis_handler_diff.apply(differentiate, comp_call=True, axis=0)
 
     # assemble stiffness matrix using derivatives
-    S = assemble_matrix_integral_1d(basis_handler_diff.flatten(),
-                                    basis_handler_diff.flatten())
+    S = assemble_matrix_integral_1d(
+        basis_handler_diff.flatten(), basis_handler_diff.flatten()
+    )
 
     # project RHS with original basis
     f = lambda x: 1.0
@@ -71,5 +73,8 @@ if __name__ == "__main__":
 
     plt.plot(xs, u_exact, "k--", label="Exact $u(x)=x(1-x)/2$")
     plt.plot(xs, u_num, "r-", label="Galerkin approx")
-    plt.xlabel("x"); plt.ylabel("u(x)")
-    plt.legend(); plt.grid(True); plt.show()
+    plt.xlabel("x")
+    plt.ylabel("u(x)")
+    plt.legend()
+    plt.grid(True)
+    plt.show()

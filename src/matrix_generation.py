@@ -2,13 +2,14 @@ import numpy as np
 from typing import List
 from src.basis.basis_generation import Element
 from scipy.integrate import quad
+from functools import reduce
 
 
-def assemble_matrix_integral_1d(basis1:List[Element], basis2:List[Element]):
+def assemble_matrix_integral_1d(basis1: List[Element], basis2: List[Element]):
     """
-    Assemble matrix A_ij = ∫ f_i(x) g_j(x) dx
-    Works with basis in format List[[Element]].
-   'function_num' must be precomputed.
+     Assemble matrix A_ij = ∫ f_i(x) g_j(x) dx
+     Works with basis in format List[[Element]].
+    'function_num' must be precomputed.
     """
 
     assert len(basis1) == len(basis2), "Bases must have same structure"
@@ -32,6 +33,26 @@ def assemble_matrix_integral_1d(basis1:List[Element], basis2:List[Element]):
     return A
 
 
+def extend_mass(M1d, d: int):
+    """Extend 1D mass matrix M1d to d dimensions via tensor (Kronecker) products."""
+    M = M1d
+    for _ in range(d - 1):
+        M = np.kron(M, M1d)
+    return M
+
+
+def extend_stiffness(M1d, S1d, d: int):
+    """Extend 1D stiffness and mass matrices to d dimensions (isotropic form)."""
+    # Sum of Kronecker products with S1d appearing once in each dimension
+    terms = []
+    for i in range(d):
+        factors = [M1d] * d
+        factors[i] = S1d
+        term = reduce(np.kron, factors)
+        terms.append(term)
+    return sum(terms)
+
+
 if __name__ == "__main__":
     from src.basis.basis import BasisHandler
     from src.operators import differentiate
@@ -49,6 +70,8 @@ if __name__ == "__main__":
     basis_handler.apply(differentiate, axis=0)
     S = assemble_matrix_integral_1d(basis_handler.flatten(), basis_handler.flatten())
     end = time()
+    S = extend_stiffness(M, S, d=2)
+    M = extend_mass(M, d=2)
     print(f"Matrix assembled in {end-start} seconds")
     print(f"conditional number M :  {np.linalg.cond(M)}")
     print(f"conditional number S :  {np.linalg.cond(S)}")
