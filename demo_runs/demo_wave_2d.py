@@ -83,11 +83,12 @@ if __name__ == "__main__":
     )
     from src.primitives import Primitives_MinimalSupport
     from src.operators import differentiate
+    from src.plotting import animate_surface_2D
 
     # 1) Build 1D basis and matrices
     primitives = Primitives_MinimalSupport()
     bh = BasisHandler(primitives=primitives, dimension=1)
-    bh.build_basis(J_Max=3, J_0=2, comp_call=True)
+    bh.build_basis(J_Max=4, J_0=2, comp_call=True)
 
     M1 = assemble_matrix_integral_1d(bh.flatten(), bh.flatten())
     bh_d = copy.deepcopy(bh)
@@ -99,8 +100,16 @@ if __name__ == "__main__":
     S2 = extend_stiffness(M1, S1, 2)
     print(f"M2/S2 shape: {M2.shape}")
 
-    # 3) Initial conditions & forcing
-    u0_fun = lambda x, y: np.sin(np.pi * x) * np.sin(np.pi * y)
+    # 3) Initial conditions   - standing wave
+    # u0_fun = lambda x, y: np.sin(np.pi * x) * np.sin(np.pi * y)
+    # v0_fun = lambda x, y: 0.0
+    # f_fun = lambda x, y, t: 0.0
+
+    # 3) Initial conditions & forcing — Gaussian impulse
+    x0, y0 = 0.5, 0.5  # center of the impulse
+    sigma = 0.05  # standard deviation (width of the bump)
+
+    u0_fun = lambda x, y: np.exp(-((x - x0) ** 2 + (y - y0) ** 2) / (2 * sigma**2))
     v0_fun = lambda x, y: 0.0
     f_fun = lambda x, y, t: 0.0
 
@@ -115,30 +124,25 @@ if __name__ == "__main__":
     b_of_t = lambda t: np.zeros(M2.shape[0])
 
     # 4) Time integrate (unconditionally stable Newmark)
-    dt, T = 2.5e-3, 0.5
+    dt, T = 5e-3, 1
     print("Integrating ...")
     U_hist = wave_newmark(M2, S2, b_of_t, u0c, v0c, dt, T)
 
     # 5) Evaluate & compare to exact u(x,y,t)=sin(pi x) sin(pi y) cos(sqrt(2) pi t)
-    xs = np.linspace(0, 1, 80)
-    ys = np.linspace(0, 1, 80)
-    X, Y = np.meshgrid(xs, ys, indexing="ij")
-    U_num = evaluate_solution_2d_kron(bh.flatten(), U_hist[-1], xs, ys)
-    U_ex = np.sin(np.pi * X) * np.sin(np.pi * Y) * np.cos(np.sqrt(2) * np.pi * T)
-
-    abs_err = np.abs(U_num - U_ex)
-    l2_err = np.sqrt(np.mean(abs_err**2))
-    max_err = abs_err.max()
-    print(f"L2 error  = {l2_err:.3e}")
-    print(f"Max error = {max_err:.3e}")
+    # xs = np.linspace(0, 1, 80)
+    # ys = np.linspace(0, 1, 80)
+    # X, Y = np.meshgrid(xs, ys, indexing="ij")
+    # U_num = evaluate_solution_2d_kron(bh.flatten(), U_hist[-1], xs, ys)
+    # U_ex = np.sin(np.pi * X) * np.sin(np.pi * Y) * np.cos(np.sqrt(2) * np.pi * T)
+    #
+    # abs_err = np.abs(U_num - U_ex)
+    # l2_err = np.sqrt(np.mean(abs_err**2))
+    # max_err = abs_err.max()
+    # print(f"L2 error  = {l2_err:.3e}")
+    # print(f"Max error = {max_err:.3e}")
 
     # 6) Surface plot
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(111, projection="3d")
-    ax.plot_surface(X, Y, U_num, cmap="viridis", rstride=1, cstride=1, linewidth=0)
-    ax.set_title(f"Wave equation at t={T:.2f}")
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_zlabel("u(x,y,t)")
-    plt.tight_layout()
-    plt.show()
+
+    xs = np.linspace(0, 1, 90)
+    ys = np.linspace(0, 1, 90)
+    animate_surface_2D(bh.flatten(), U_hist, xs, ys, speed=5.0, frame_step=1)

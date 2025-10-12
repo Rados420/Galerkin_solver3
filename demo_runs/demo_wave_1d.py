@@ -70,15 +70,16 @@ if __name__ == "__main__":
     from src.matrix_generation import assemble_matrix_integral_1d
     from src.primitives import Primitives_MinimalSupport
     from src.operators import differentiate
+    from src.plotting import animate_solution_1D
     import time
 
     primitives = Primitives_MinimalSupport()
 
     # Build basis and its derivative
     basis_handler = BasisHandler(primitives=primitives, dimension=1)
-    basis_handler.build_basis(J_Max=4, J_0=2, comp_call=True)
+    basis_handler.build_basis(J_Max=5, J_0=2, comp_call=True)
     basis_diff = BasisHandler(primitives=primitives, dimension=1)
-    basis_diff.build_basis(J_Max=4, J_0=2, comp_call=True)
+    basis_diff.build_basis(J_Max=5, J_0=2, comp_call=True)
     basis_diff.apply(differentiate, axis=0)
 
     # Assemble mass and stiffness matrices
@@ -89,8 +90,21 @@ if __name__ == "__main__":
     print(f"Matrix assembly took {end - start:.3f} s  |  size {M.shape}")
 
     # Initial conditions (1D eigenmode)
-    f_init = lambda x: np.sin(np.pi * x)  # u(x,0)
-    g_init = lambda x: 0.0 * x  # u_t(x,0)
+    # f_init = lambda x: np.sin(np.pi * x)  # u(x,0)
+    # g_init = lambda x: 0.0 * x  # u_t(x,0)
+
+    # --- Initial conditions: traveling Gaussian pulse to the right ---
+    x0 = 0.3  # initial pulse center
+    sigma = 0.05  # width of the pulse
+    c = 1.0  # wave speed
+
+    # u(x,0): Gaussian pulse
+    f_init = lambda x: np.exp(-((x - x0) ** 2) / (2 * sigma**2))
+
+    # u_t(x,0): choose time derivative so it travels to the right
+    g_init = (
+        lambda x: -(c / sigma**2) * (x - x0) * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
+    )
 
     # Solve
     T, dt = 2.5, 1e-3
@@ -99,27 +113,12 @@ if __name__ == "__main__":
     # Evaluate numerical and exact solutions
     xs = np.linspace(0, 1, 400)
     u_num = evaluate_solution(basis_handler.flatten(), U_hist[-1], xs)
-    u_exact = np.sin(np.pi * xs) * np.cos(np.pi * T)
+    # u_exact = np.sin(np.pi * xs) * np.cos(np.pi * T)
 
     # L2 error
-    err_L2 = np.sqrt(np.trapz((u_num - u_exact) ** 2, xs))
-    print(f"L2 error at t={T:.2f}: {err_L2:.3e}")
+    # err_L2 = np.sqrt(np.trapz((u_num - u_exact) ** 2, xs))
+    # print(f"L2 error at t={T:.2f}: {err_L2:.3e}")
 
-    # --- Plot solution and error ---
-    plt.figure()
-    plt.plot(xs, u_exact, "k--", label="Exact $u=\\sin(\\pi x)\\cos(\\pi t)$")
-    plt.plot(xs, u_num, "r-", label="Galerkin approx")
-    plt.xlabel("x")
-    plt.ylabel("u(x,T)")
-    plt.title("1D Wave Equation — Final Time")
-    plt.legend()
-    plt.grid(True)
-
-    plt.figure()
-    plt.plot(xs, np.abs(u_num - u_exact), label="|u_h - u|")
-    plt.xlabel("x")
-    plt.ylabel("abs error")
-    plt.title("Pointwise absolute error")
-    plt.grid(True)
-    plt.legend()
-    plt.show()
+    # --- Plot solution ---
+    xs = np.linspace(0, 1, 200)
+    anim = animate_solution_1D(basis_handler.flatten(), U_hist, xs, interval=5)
