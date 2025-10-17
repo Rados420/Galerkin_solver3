@@ -94,11 +94,14 @@ class BasisHandler:
             # outside support stays zero
         return Ph
 
-    def project_rhs_1d_gauss(self,basis1d, f, level=None, q=5):
+    def project_rhs_1d_gauss(self, f,basis1d=None, level=None, q=5):
         """
         High-accuracy 1D RHS projection using dyadic Gauss–Legendre quadrature.
         Computes b_i = ∫ f(x) φ_i(x) dx for all basis functions φ_i.
         """
+        if basis1d is None:
+            basis1d=self.flatten()
+
         if level is None:
             level = self._finest_level_from_basis(basis1d) + 1
 
