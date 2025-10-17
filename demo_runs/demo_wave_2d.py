@@ -2,6 +2,7 @@ import numpy as np
 import copy
 from time import time
 
+
 # ---------- Projections & eval (Kronecker world) ----------
 def project_rhs_2d_kron(basis1d, f, nx=60):
     xs = np.linspace(0, 1, nx)
@@ -125,7 +126,7 @@ if __name__ == "__main__":
     # 4) Time integrate (unconditionally stable Newmark)
     dt, T = 5e-3, 1.5
     print("Integrating ...")
-    start=time()
+    start = time()
     U_hist = wave_newmark(M2, S2, b_of_t, u0c, v0c, dt, T)
     end = time()
     print(f"Integration time elapsed: {end - start}")

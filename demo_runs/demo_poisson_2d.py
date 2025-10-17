@@ -136,7 +136,7 @@ if __name__ == "__main__":
     # Project RHS and solve
     print("Projecting RHS ...")
     # b2 = project_rhs_2d_gauss(basis_handler.flatten(), f)
-    b2=basis_handler.project_rhs_2d_gauss(f=f)
+    b2 = basis_handler.project_rhs_2d_gauss(f=f)
     print("Solving system ...")
     coeffs = poisson_solver(S2, b2)
 
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     ys = np.linspace(0, 1, 60)
     X, Y = np.meshgrid(xs, ys, indexing="ij")
     # U_num = evaluate_solution_2d_kron(basis_handler.flatten(), coeffs, xs, ys)
-    U_num= basis_handler.evaluate_solution_2d_kron(coeffs, xs, ys)
+    U_num = basis_handler.evaluate_solution_2d_kron(coeffs, xs, ys)
     U_exact = u_exact(X, Y)
 
     # Error metrics

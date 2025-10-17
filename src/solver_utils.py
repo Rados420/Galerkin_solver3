@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def solve_precond(S, b):
     """Solve (D^-1/2 S D^-1/2)ũ = D^-1/2 b"""
     D = np.diag(np.diag(S))
@@ -8,6 +9,7 @@ def solve_precond(S, b):
     f_tilde = D_inv_sqrt @ b
     u_tilde = np.linalg.solve(A_tilde, f_tilde)
     return D_inv_sqrt @ u_tilde
+
 
 # ---------- Newmark (β=1/4, γ=1/2) with consistent M ----------
 def wave_newmark(M, S, b_of_t, u0c, v0c, dt, T):
