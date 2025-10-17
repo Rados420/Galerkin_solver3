@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     primitives = Primitives_MinimalSupport()
     basis_handler = BasisHandler(primitives=primitives, dimension=1)
-    basis_handler.build_basis(J_Max=3, J_0=2, comp_call=True)
+    basis_handler.build_basis(J_Max=6, J_0=2, comp_call=True)
 
     # 1D matrices
     M1 = assemble_matrix_integral_1d(basis_handler.flatten(), basis_handler.flatten())

@@ -1,8 +1,6 @@
 import numpy as np
 import copy
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
+from time import time
 
 # ---------- Projections & eval (Kronecker world) ----------
 def project_rhs_2d_kron(basis1d, f, nx=60):
@@ -51,6 +49,7 @@ def wave_newmark(M, S, b_of_t, u0c, v0c, dt, T):
 
     traj = [u.copy()]
     for k in range(1, steps + 1):
+        print(f"{k}/{steps}")
         t = k * dt
 
         # Newmark predictor
@@ -124,10 +123,12 @@ if __name__ == "__main__":
     b_of_t = lambda t: np.zeros(M2.shape[0])
 
     # 4) Time integrate (unconditionally stable Newmark)
-    dt, T = 5e-3, 1
+    dt, T = 5e-3, 1.5
     print("Integrating ...")
+    start=time()
     U_hist = wave_newmark(M2, S2, b_of_t, u0c, v0c, dt, T)
-
+    end = time()
+    print(f"Integration time elapsed: {end - start}")
     # 5) Evaluate & compare to exact u(x,y,t)=sin(pi x) sin(pi y) cos(sqrt(2) pi t)
     # xs = np.linspace(0, 1, 80)
     # ys = np.linspace(0, 1, 80)
