@@ -63,18 +63,41 @@ if __name__ == "__main__":
     primitives = Primitives_MinimalSupport()
 
     basis_handler = BasisHandler(primitives=primitives, dimension=1)
-    basis_handler.build_basis(J_0=2, J_Max=4, comp_call=True)
+    basis_handler.build_basis(J_0=2, J_Max=2, comp_call=True)
+    b = basis_handler.flatten()
+    phi_b = b[0]["function_num"]
+    phi = b[1]["function_num"]
+    xx = np.linspace(0, 1, 100)
+    plt.plot(xx, phi_b(xx))
+    plt.plot(xx, phi(xx - 1 / 4))
+    plt.show()
+
+    g00 = []
+    h00 = []
+    for k in range(4):
+        g00.append(
+            quad(lambda x: phi(x) * phi(x - k / 4), 0, 1, epsabs=1e-12, epsrel=1e-12)
+        )
+        h00.append(
+            quad(lambda x: phi_b(x) * phi(x - k / 4), 0, 1, epsabs=1e-12, epsrel=1e-12)
+        )
+
+    print(g00)
+    print(h00)
 
     start = time()
     M = assemble_matrix_integral_1d(basis_handler.flatten(), basis_handler.flatten())
     basis_handler.apply(differentiate, axis=0)
     S = assemble_matrix_integral_1d(basis_handler.flatten(), basis_handler.flatten())
     end = time()
-    S = extend_stiffness(M, S, d=2)
-    M = extend_mass(M, d=2)
-    print(f"Matrix assembled in {end-start} seconds")
-    print(f"conditional number M :  {np.linalg.cond(M)}")
-    print(f"conditional number S :  {np.linalg.cond(S)}")
+    # S = extend_stiffness(M, S, d=2)
+    # M = extend_mass(M, d=2)
+    # print(f"Matrix assembled in {end-start} seconds")
+    # print(f"conditional number M :  {np.linalg.cond(M)}")
+    # print(f"conditional number S :  {np.linalg.cond(S)}")
+    print(M.shape)
+    print(M[0])
+    print(M[1])
     plt.imshow(M)
     plt.show()
     plt.imshow(S)

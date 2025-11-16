@@ -4,6 +4,7 @@ from typing import List, Dict, Callable
 from src.primitives import Primitives, Primitives_MinimalSupport
 from src.basis.basis_generation import Element, build_basis_1d, extend_isotropic_tensor
 from numpy.polynomial.legendre import leggauss
+from src.solver_utils import product_integral2d
 
 
 class BasisHandler:
@@ -45,6 +46,34 @@ class BasisHandler:
         """Flatten basis element into a single list."""
         flattened = [el for group in self.basis for el in group.values()]
         return flattened
+
+    def project_f_2d(self, f, level=None):
+        """Project f to 2d basis."""
+        c = []
+        if level is None:
+            bflat = self.flatten()
+        else:
+            bflat = self.basis[level].values()
+        for i, elem in enumerate(bflat):
+            print(f"calculating element {i}")
+            c.append(
+                product_integral2d(
+                    f, elem["function_num"], x_min=0, x_max=1, y_min=0, y_max=1
+                )
+            )
+        return c
+
+    def reconstruct_solution(coeffs, elements) -> Callable[[float, float], float]:
+        def u(x, y):
+            s = 0.0
+            for c, elem in zip(coeffs, elements):
+                f = elem["function_num"]
+                if f is None:
+                    raise ValueError("Element has no numeric function.")
+                s += c * f(x, y)
+            return s
+
+        return u
 
     @staticmethod
     def _finest_level_from_basis(basis1d):
@@ -170,17 +199,23 @@ if __name__ == "__main__":
     from src.operators import differentiate
 
     primitives = Primitives_MinimalSupport()
-    bh = BasisHandler(primitives=primitives, dimension=1)
-    bh.build_basis(J_Max=4, J_0=2)
+    bh = BasisHandler(primitives=primitives, dimension=2)
+    bh.build_basis(J_Max=2, J_0=2)
 
-    # apply derivative to all basis elements
-    bh.apply(differentiate, axis=0)
+    def f_rhs(x, y, s=0.5):
+        # f(x, y) = (2π²)^s * sin(πx) sin(πy)
+        return (2 * np.pi**2) ** s * np.sin(np.pi * x) * np.sin(np.pi * y)
 
-    # pick and plot one element
-    elem = list(bh.basis[0].values())[1]
-    f_num = elem["function_num"]
+    b = bh.project_f_2d(f_rhs)
 
-    # mesh grid for plotting
-    xx = np.linspace(0, 1, 200)
-    plt.plot(xx, f_num(xx))
-    plt.show()
+    # # apply derivative to all basis elements
+    # bh.apply(differentiate, axis=0)
+    #
+    # # pick and plot one element
+    # elem = list(bh.basis[0].values())[1]
+    # f_num = elem["function_num"]
+    #
+    # # mesh grid for plotting
+    # xx = np.linspace(0, 1, 200)
+    # plt.plot(xx, f_num(xx))
+    # plt.show()

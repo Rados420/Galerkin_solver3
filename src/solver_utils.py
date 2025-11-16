@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.integrate import dblquad
 
 
 def solve_precond(S, b):
@@ -9,6 +10,12 @@ def solve_precond(S, b):
     f_tilde = D_inv_sqrt @ b
     u_tilde = np.linalg.solve(A_tilde, f_tilde)
     return D_inv_sqrt @ u_tilde
+
+
+def product_integral2d(f, g, x_min, x_max, y_min, y_max):
+    return dblquad(
+        lambda y, x: f(x, y) * g(x, y), x_min, x_max, lambda x: y_min, lambda x: y_max
+    )[0]
 
 
 # ---------- Newmark (β=1/4, γ=1/2) with consistent M ----------
