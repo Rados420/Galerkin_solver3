@@ -113,54 +113,115 @@ def build_basis_1d(primitives, j_max: int, j_0: int = 2) -> List[Dict[str, Eleme
     return base
 
 
-def extend_isotropic_tensor(
-    base_1d: List[Dict[str, Element]], d: int
-) -> List[Dict[str, Element]]:
-    """Construct an isotropic tensor-product basis from 1D wavelet basis (supports up to d=3)."""
+def extend_isotropic_tensor(base_1d: List[Dict[str, Element]], d: int) -> List[Dict[str, Element]]:
+    """
+    Build a tensor-product multiresolution basis that matches the standard construction:
 
-    if d == 1:
-        return base_1d
+        2D scaling space at level j0:
+            V_{j0} ⊗ V_{j0}
 
-    x_syms = sp.symbols(f"x0:{d}")
+        For each j > j0:
+            (W_j ⊗ V_j) ∪ (V_j ⊗ W_j) ∪ (W_j ⊗ W_j)
+
+    where V_j is the 1D scaling space and W_j is the 1D wavelet space at scale j.
+
+    base_1d is a list:
+        [ V_{j0},  W_{j0},  W_{j0+1}, ..., W_{Jmax} ]
+
+    This function returns:
+        [
+            V_{j0}⊗V_{j0},                           # 2D scaling level
+            W_{j0}⊗V_{j0} ∪ V_{j0}⊗W_{j0} ∪ W_{j0}⊗W_{j0},
+            W_{j0+1}⊗V_{j0+1} ∪ ...,
+            ...
+        ]
+    """
+
+    if d != 2:
+        raise NotImplementedError("This implementation handles only the 2D tensor case.")
+
+    x_syms = sp.symbols("x0 x1")
+
     nd_basis: List[Dict[str, Element]] = []
 
-    for level_dict in base_1d:
-        level_nd: Dict[str, Element] = {}
-        keys = list(level_dict.keys())
-        elems = list(level_dict.values())
+    # ----------------------------------------------------------------------
+    # 0. Extract the correct decomposition of 1D levels
+    # ----------------------------------------------------------------------
+    V_j0 = base_1d[0]                # scaling at initial level
+    W_levels = base_1d[1:]           # wavelets W_j for j = j0..jmax
 
-        # Cartesian product over dimensions
-        for combo in product(range(len(elems)), repeat=d):
-            elms = [elems[i] for i in combo]
+    # ----------------------------------------------------------------------
+    # 1. First 2D level = V ⊗ V
+    # ----------------------------------------------------------------------
+    level0 = {}
+    V_items = list(V_j0.items())
 
-            # Combine supports, scales, and types
-            scale = elms[0]["scale"]
-            shifts = tuple(e["shift"][0] for e in elms)
-            types = tuple(e["type"][0] for e in elms)
-            support = tuple(e["support"][0] for e in elms)
+    for (k1, e1), (k2, e2) in product(V_items, V_items):
+        tag = f"T_{k1}_{k2}"
+        func = e1["function_sym"](x_syms[0]) * e2["function_sym"](x_syms[1])
+        level0[tag] = Element(
+            function_sym=sp.Lambda(x_syms, func),
+            function_num=None,
+            scale=e1["scale"],
+            shift=(e1["shift"][0], e2["shift"][0]),
+            type=(e1["type"][0], e2["type"][0]),
+            support=(e1["support"][0], e2["support"][0]),
+        )
 
-            # Tensor product of symbolic functions
-            f_expr = 1
-            for i in range(d):
-                f_expr *= elms[i]["function_sym"](x_syms[i])
+    nd_basis.append(level0)
 
-            func_sym = sp.Lambda(x_syms, f_expr)
+    # ----------------------------------------------------------------------
+    # 2. Higher levels: tensor wavelets with scaling and wavelets
+    # ----------------------------------------------------------------------
+    for W_j in W_levels:
+        level_j = {}
 
-            # ID tag, short but unique
-            tag = "T" + "_".join(keys[i] for i in combo)
+        W_items = list(W_j.items())
+        V_items = list(V_j0.items())  # scaling functions at the same scale
 
-            level_nd[tag] = Element(
-                function_sym=func_sym,
+        # (a) W ⊗ V  — horizontal wavelets
+        for (k1, e1), (k2, e2) in product(W_items, V_items):
+            tag = f"T_{k1}_{k2}"
+            func = e1["function_sym"](x_syms[0]) * e2["function_sym"](x_syms[1])
+            level_j[tag] = Element(
+                function_sym=sp.Lambda(x_syms, func),
                 function_num=None,
-                scale=scale,
-                shift=shifts,
-                type=types,
-                support=support,
+                scale=e1["scale"],
+                shift=(e1["shift"][0], e2["shift"][0]),
+                type=(e1["type"][0], e2["type"][0]),
+                support=(e1["support"][0], e2["support"][0]),
             )
 
-        nd_basis.append(level_nd)
+        # (b) V ⊗ W  — vertical wavelets
+        for (k1, e1), (k2, e2) in product(V_items, W_items):
+            tag = f"T_{k1}_{k2}"
+            func = e1["function_sym"](x_syms[0]) * e2["function_sym"](x_syms[1])
+            level_j[tag] = Element(
+                function_sym=sp.Lambda(x_syms, func),
+                function_num=None,
+                scale=e2["scale"],
+                shift=(e1["shift"][0], e2["shift"][0]),
+                type=(e1["type"][0], e2["type"][0]),
+                support=(e1["support"][0], e2["support"][0]),
+            )
+
+        # (c) W ⊗ W — diagonal wavelets
+        for (k1, e1), (k2, e2) in product(W_items, W_items):
+            tag = f"T_{k1}_{k2}"
+            func = e1["function_sym"](x_syms[0]) * e2["function_sym"](x_syms[1])
+            level_j[tag] = Element(
+                function_sym=sp.Lambda(x_syms, func),
+                function_num=None,
+                scale=e1["scale"],
+                shift=(e1["shift"][0], e2["shift"][0]),
+                type=(e1["type"][0], e2["type"][0]),
+                support=(e1["support"][0], e2["support"][0]),
+            )
+
+        nd_basis.append(level_j)
 
     return nd_basis
+
 
 
 if __name__ == "__main__":
