@@ -113,7 +113,9 @@ def build_basis_1d(primitives, j_max: int, j_0: int = 2) -> List[Dict[str, Eleme
     return base
 
 
-def extend_isotropic_tensor(base_1d: List[Dict[str, Element]], d: int) -> List[Dict[str, Element]]:
+def extend_isotropic_tensor(
+    base_1d: List[Dict[str, Element]], d: int
+) -> List[Dict[str, Element]]:
     """
     Build a tensor-product multiresolution basis that matches the standard construction:
 
@@ -138,7 +140,9 @@ def extend_isotropic_tensor(base_1d: List[Dict[str, Element]], d: int) -> List[D
     """
 
     if d != 2:
-        raise NotImplementedError("This implementation handles only the 2D tensor case.")
+        raise NotImplementedError(
+            "This implementation handles only the 2D tensor case."
+        )
 
     x_syms = sp.symbols("x0 x1")
 
@@ -147,8 +151,8 @@ def extend_isotropic_tensor(base_1d: List[Dict[str, Element]], d: int) -> List[D
     # ----------------------------------------------------------------------
     # 0. Extract the correct decomposition of 1D levels
     # ----------------------------------------------------------------------
-    V_j0 = base_1d[0]                # scaling at initial level
-    W_levels = base_1d[1:]           # wavelets W_j for j = j0..jmax
+    V_j0 = base_1d[0]  # scaling at initial level
+    W_levels = base_1d[1:]  # wavelets W_j for j = j0..jmax
 
     # ----------------------------------------------------------------------
     # 1. First 2D level = V ⊗ V
@@ -221,7 +225,6 @@ def extend_isotropic_tensor(base_1d: List[Dict[str, Element]], d: int) -> List[D
         nd_basis.append(level_j)
 
     return nd_basis
-
 
 
 if __name__ == "__main__":
